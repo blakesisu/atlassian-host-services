@@ -1,0 +1,129 @@
+version: '3'
+
+services:
+  nginx:
+    image: blacklabelops/nginx:${ATLASSIAN_NGINX_VERSION}
+    ports:
+      - '443:443'
+      - '80:80'
+    networks:
+      - jiranet
+      - confluencenet
+      # - bitbucketnet
+    volumes:
+      - nginx_volume:/home/nginx
+      - ssl_certificates:/etc/letsencrypt
+    environment:
+      - 'SERVER1PROXY_APPLICATION1=jira'
+      - 'SERVER1REVERSE_PROXY_LOCATION1=/'
+      - 'SERVER1REVERSE_PROXY_PASS1=http://jira:8080'
+      - 'SERVER1HTTPS_ENABLED=${ATLASSIAN_HTTPS}'
+      - 'SERVER1HTTP_ENABLED=${ATLASSIAN_HTTP}'
+      # - 'SERVER1LETSENCRYPT_CERTIFICATES=${ATLASSIAN_HTTPS}'
+      # - 'SERVER1CERTIFICATE_FILE=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/fullchain.pem'
+      # - 'SERVER1CERTIFICATE_KEY=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/privkey.pem'
+      # - 'SERVER1CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/fullchain.pem'
+      - 'SERVER1CERTIFICATE_DNAME=/CN=CrustyClown/OU=SpringfieldEntertainment/O=crusty.springfield.com/L=Springfield/C=US'
+
+      - 'SERVER2PROXY_APPLICATION1=confluence'
+      - 'SERVER2REVERSE_PROXY_LOCATION1=/synchrony'
+      - 'SERVER2REVERSE_PROXY_LOCATION2=/'
+      - 'SERVER2REVERSE_PROXY_PASS1=http://confluence:8091'
+      - 'SERVER2HTTPS_ENABLED=${ATLASSIAN_HTTPS}'
+      - 'SERVER2HTTP_ENABLED=${ATLASSIAN_HTTP}'
+      - 'SERVER2REVERSE_PROXY_PASS2=http://confluence:8090'
+      # - 'SERVER2LETSENCRYPT_CERTIFICATES=${ATLASSIAN_HTTPS}'
+      # - 'SERVER2CERTIFICATE_FILE=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/fullchain.pem'
+      # - 'SERVER2CERTIFICATE_KEY=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/privkey.pem'
+      # - 'SERVER2CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/fullchain.pem'
+      - 'SERVER2CERTIFICATE_DNAME=/CN=CrustyClown/OU=SpringfieldEntertainment/O=crusty.springfield.com/L=Springfield/C=US'
+
+
+      # - 'SERVER3PROXY_APPLICATION1=bitbucket'
+      # - 'SERVER3REVERSE_PROXY_LOCATION1=/'
+      # - 'SERVER3REVERSE_PROXY_PASS1=http://bitbucket:7990'
+      # - 'SERVER3HTTPS_ENABLED=${ATLASSIAN_HTTPS}'
+      # - 'SERVER3HTTP_ENABLED=${ATLASSIAN_HTTP}'
+      # - 'SERVER3LETSENCRYPT_CERTIFICATES=${ATLASSIAN_HTTPS}'
+      # - 'SERVER3CERTIFICATE_FILE=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/fullchain.pem'
+      # - 'SERVER3CERTIFICATE_KEY=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/privkey.pem'
+      # - 'SERVER3CERTIFICATE_TRUSTED=/etc/letsencrypt/live/${JIRA_DOMAIN_NAME}/fullchain.pem'
+      # - 'SERVER3CERTIFICATE_DNAME=/CN=CrustyClown/OU=SpringfieldEntertainment/O=crusty.springfield.com/L=Springfield/C=US'
+    restart: unless-stopped
+
+  jira:
+    image: blacklabelops/jira:${JIRA_VERSION}
+    # depends_on:
+    #   - jira_mysql
+    volumes:
+      - jira_volume:/var/atlassian/jira
+    networks:
+      - jiranet
+    # ports:
+    #   - '80:8080'
+    environment:
+      # - 'TZ=${ATLASSIAN_TIME_ZONE}'
+      # - "CATALINA_OPTS=${JIRA_JAVA_OPTIONS}"
+      - "JIRA_PROXY_NAME=${JIRA_DOMAIN_NAME}"
+      - "JIRA_PROXY_PORT=${ATLASSIAN_PROXY_PORT}"
+      - "JIRA_PROXY_SCHEME=${ATLASSIAN_PROXY_SCHEME}"
+      # - 'JIRA_DATABASE_URL=mysql://${ATLASSIAN_DB_USERNAME}@jira_mysql/atlassiandb'
+      # - 'JIRA_DB_PASSWORD=${ATLASSIAN_DB_PASSWORD}'
+      # - 'JIRA_DELAYED_START=${ATLASSIAN_DB_DELAYED_START}'
+    restart: unless-stopped
+
+  confluence:
+    image: blacklabelops/confluence:${CONFLUENCE_VERSION}
+    hostname: confluence
+    # depends_on:
+    #   - confluence_mysql
+    volumes:
+      - confluence_volume:/var/atlassian/confluence
+    networks:
+      - confluencenet
+    # ports:
+    #   - '80:8090'
+    #   - '8091:8091'
+    environment:
+      # - 'TZ=${ATLASSIAN_TIME_ZONE}'
+      # - "CATALINA_OPTS=${CONFLUENCE_JAVA_OPTIONS}"
+      - "CONFLUENCE_PROXY_NAME=${CONFLUENCE_DOMAIN_NAME}"
+      - "CONFLUENCE_PROXY_PORT=${ATLASSIAN_PROXY_PORT}"
+      - "CONFLUENCE_PROXY_SCHEME=${ATLASSIAN_PROXY_SCHEME}"
+    restart: unless-stopped
+
+  # bitbucket:
+  #   image: blacklabelops/bitbucket:${BITBUCKET_VERSION}
+  #   hostname: bitbucket
+  #   ports:
+  #     - 7999:7999
+  #   networks:
+  #     - bitbucketnet
+  #   volumes:
+  #     - bitbucket_volume:/var/atlassian/bitbucket
+  #   environment:
+  #     # - 'TZ=${ATLASSIAN_TIME_ZONE}'
+  #     # - "CATALINA_OPTS=${BITBUCKET_JAVA_OPTIONS}"
+  #     - "BITBUCKET_PROXY_NAME=${BITBUCKET_DOMAIN_NAME}"
+  #     - "BITBUCKET_PROXY_PORT=${ATLASSIAN_PROXY_PORT}"
+  #     - "BITBUCKET_PROXY_SCHEME=${ATLASSIAN_PROXY_SCHEME}"
+  #   restart: unless-stopped
+
+volumes:
+  nginx_volume:
+    external: false
+  ssl_certificates:
+    external: false
+  jira_volume:
+    external: false
+  confluence_volume:
+    external: false
+  # bitbucket_volume:
+  #   external: false
+networks:
+  jiranet:
+    driver: bridge
+  confluencenet:
+    driver: bridge
+  # bitbucketnet:
+  #   driver: bridge

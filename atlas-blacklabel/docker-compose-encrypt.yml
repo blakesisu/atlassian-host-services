@@ -1,0 +1,20 @@
+version: '3'
+services:
+  letsencrypt:
+    image: blacklabelops/letsencrypt
+    ports:
+      - '443:443'
+      - '80:80'
+    volumes:
+      - ssl_certificates:/etc/letsencrypt
+    environment:
+      - 'LETSENCRYPT_HTTP_ENABLED=false'
+      - 'LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL}'
+      - 'LETSENCRYPT_DOMAIN1=${JIRA_DOMAIN_NAME}'
+      - 'LETSENCRYPT_DOMAIN3=${CONFLUENCE_DOMAIN_NAME}'
+      - 'LETSENCRYPT_DOMAIN4=${BITBUCKET_DOMAIN_NAME}'
+    command: install
+
+volumes:
+  ssl_certificates:
+    external: false
